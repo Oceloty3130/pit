@@ -33,7 +33,7 @@ public class Add {
         }else{
             ver = "file";
         }
-        Scan objScan = new Scan(path, "\\.pit", directorySaveName, option);
+        Scan objScan = new Scan(path, "\\.pit", directorySaveName, "add");
         if(option == "."){
             //call function scan which give full directory
             objScan.createDirectoryMap();

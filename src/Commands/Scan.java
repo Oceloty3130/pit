@@ -1,6 +1,7 @@
 package Commands;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -8,17 +9,18 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 public class Scan {
 
     //attributes
     private static List<String> directoryMap = new ArrayList<>();
-    private static List<String> datesDirectoryMap = new ArrayList<>();
     private String path = null;
     private String option = null;
-    private String directorySaveName;
+    private final String directorySaveName;
     private String directorySaveDates = null;
     private String directoryScanIgnor = null;
+    private int ver1 = -1;
 
     //constructor
     public Scan(String path, String directoryScanIgnor, String directorySaveName, String option){
@@ -40,6 +42,51 @@ public class Scan {
     public void createDirectoryMap(){
         var storage = new File(path);
         File myDirectory = new File(path + directoryScanIgnor); // myDirectory is file which is ignored
+        pitDirectory(storage,myDirectory);
+    }
+
+    public void scanPathOrFile(String pathOrFile, String control){
+        Path pathFile = Path.of(pathOrFile);
+        File fileFile = pathFile.toFile();
+        try {
+            Path a = Path.of(directorySaveName);
+            Scanner iPath = new Scanner(a.toFile());
+            while (iPath.hasNextLine()) {
+                directoryMap.add(iPath.nextLine());
+                ver1 = ver1 + 1;
+            }
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        if(control == "file"){
+            //add in txt file
+            try {
+                int i = 0;
+                if(ver1 == -1){
+                    Files.writeString(Path.of(directorySaveName),pathOrFile.substring(path.length()), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+                    return;
+                }
+                while(i < directoryMap.size() && !(directoryMap.get(i).contains(fileFile.getPath().substring(path.length())))){
+                    i = i + 1;
+                }
+                if(i != directoryMap.size()){
+                    return;
+                }
+                Files.writeString(Path.of(directorySaveName),pathOrFile.substring(path.length()), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }else if(control == "path"){
+            //search in a directory
+            directoryMap.add(fileFile.getPath().substring(path.length()));
+            ver1 = ver1 + 1;
+            File myDirectory = (Path.of(path + "\\.pit")).toFile();
+            pitDirectory(fileFile,myDirectory);
+        }
+    }
+
+    private void pitDirectory (File storage, File myDirectory){
+        int iv = ver1;
         if(storage.isDirectory()){
             File[] children = storage.listFiles();
             if(children != null){
@@ -61,7 +108,15 @@ public class Scan {
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
-                        if(!ver){
+                        int i = 0;
+                        while(!((directoryMap.get(i)==(childFile.getPath().substring(path.length())))) && ver1 != -1){
+                            if(i == ver1){
+                                break;
+                            }
+                            i = i + 1;
+                        }
+                        if(!ver && !(directoryMap.get(i) == (childFile.getPath().substring(path.length()))) && ver1 != -1){
+                            ver1 = ver1 + 1;
                             directoryMap.add(childFile.getPath().substring(path.length())); //add in directoryMap a relative path
                         }
                     }
@@ -70,65 +125,17 @@ public class Scan {
             }
         }
         try {
-            Files.write(Path.of(directorySaveName),directoryMap, StandardCharsets.UTF_8, StandardOpenOption.APPEND);
-            if(directorySaveDates != null){
-                Files.write(Path.of(directorySaveDates),datesDirectoryMap, StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+            if(iv != ver1){
+                if(iv == -1){
+                    iv = 0;
+                }
+                while (directoryMap.get(iv) != null && iv != ver1) {
+                    iv = iv + 1;
+                    Files.writeString(Path.of(directorySaveName),directoryMap.get(iv) + "\n", StandardCharsets.UTF_8,StandardOpenOption.APPEND);
+                }
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }
-
-    }
-
-    public void scanPathOrFile(String pathOrFile, String control){
-        Path pathFile = Path.of(pathOrFile);
-        File fileFile = pathFile.toFile();
-        if(control == "file"){
-            //add in txt file
-            try {
-                Files.writeString(Path.of(directorySaveName),pathOrFile.substring(path.length()), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }else if(control == "path"){
-            //search in a directory
-            directoryMap.add(fileFile.getPath().substring(path.length()));
-            if(fileFile.isDirectory()){
-                File[] children = fileFile.listFiles();
-                if(children != null){
-                    for(File childFile : children){
-                        if(childFile.isDirectory()){
-                            try {
-                                if(!Files.isSameFile(childFile.toPath(), Path.of(path + "\\.pit"))){
-                                    getAllDirectory(childFile);
-                                }
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
-                        }else{
-                            boolean ver = false;
-                            try {
-                                if(Files.isSameFile(childFile.toPath(), Path.of(path + "\\pit.jar"))){
-                                    ver = true;
-                                }
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
-                            if(!ver) {
-                                directoryMap.add(childFile.getPath().substring(path.length())); //add in directoryMap a relative path
-                            }
-                        }
-                    }
-                }
-            }
-            try {
-                Files.write(Path.of(directorySaveName),directoryMap, StandardCharsets.UTF_8,StandardOpenOption.APPEND);
-                if(directorySaveDates != null){
-                    Files.write(Path.of(directorySaveDates),datesDirectoryMap, StandardCharsets.UTF_8, StandardOpenOption.APPEND);
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
         }
     }
 
@@ -137,10 +144,17 @@ public class Scan {
             File[] children = file.listFiles();
             if(children != null){
                 for(File childFile : children){
-                    if(directorySaveDates != null){
-                        datesDirectoryMap.add(String.valueOf(childFile.lastModified()));
+                    int i = 0;
+                    while(!(directoryMap.get(i).contains(childFile.getPath().substring(path.length()))) && ver1 != -1){
+                        if(i == ver1){
+                            break;
+                        }
+                        i = i + 1;
                     }
-                    directoryMap.add(childFile.getPath().substring(path.length())); //add in directoryMap a relative path
+                    if(!directoryMap.get(i).contains(childFile.getPath().substring(path.length())) && ver1 != -1){
+                        ver1 = ver1 + 1;
+                        directoryMap.add(childFile.getPath().substring(path.length())); //add in directoryMap a relative path
+                    }
                     getAllDirectory(childFile);
                 }
             }

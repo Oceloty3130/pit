@@ -2,10 +2,13 @@ package Commands;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Scanner;
 
+import static Commands.Create.directoryTempDestroy;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public class Commit {
@@ -17,7 +20,7 @@ public class Commit {
     private String saveDirectory;
     private String path;
     private String option;
-    private String scanDirectory;
+    private String scanFile;
 
     //constructor
     public Commit(String path1, String option1) {
@@ -31,11 +34,9 @@ public class Commit {
         saveDirectory = Scan.scanSaveDirectory(path + "\\.pit\\save", "current");
         saveTxtDirectory = saveDirectory + "\\.info\\directoryMap.txt";
         saveDatesTxtDirectory = saveDirectory + "\\.info\\datesDirectoryMap.txt";
-        scanDirectory = "\\.pit";
-        Scan obj = new Scan(path, scanDirectory, saveTxtDirectory, saveDatesTxtDirectory, option);
-        obj.createDirectoryMap();
+        scanFile =  path + "\\.pit\\temp\\directoryMap.txt";
         try {
-            Path a = Path.of(saveTxtDirectory);
+            Path a = Path.of(scanFile);
             Scanner iPath = new Scanner(a.toFile());
             while (iPath.hasNextLine()) {
                 String data = iPath.nextLine();
@@ -45,9 +46,13 @@ public class Commit {
                 if (dataFile.isDirectory()) {
                     Files.createDirectories(Path.of(fullPath));
                 } else {
+                    Files.createDirectories(Path.of(fullPath).getParent());
                     Files.copy(Path.of(fullPathCopy), Path.of(fullPath), REPLACE_EXISTING);
+                    Files.writeString(Path.of(saveDatesTxtDirectory), dataFile.lastModified() + "\n", StandardCharsets.UTF_8, StandardOpenOption.APPEND);
                 }
             }
+            Files.copy(Path.of(scanFile), Path.of(saveTxtDirectory), REPLACE_EXISTING);
+            directoryTempDestroy(path + "\\.pit\\temp");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

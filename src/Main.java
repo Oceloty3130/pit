@@ -3,8 +3,8 @@ import Commands.Commands;
 public class Main {
     public static void main(String[] args) {
         //System.getProperty("user.dir")
-        String option = new String();
-        String path = new String();
+        String option = "";
+        String path = "";
         if(args.length == 0){
             System.out.println("Enter a command");
         } else if (args.length == 1) {
