@@ -2,6 +2,7 @@ package Commands;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.util.Objects;
 
 public class Add {
 
@@ -33,13 +34,14 @@ public class Add {
         }else{
             ver = "file";
         }
-        Scan objScan = new Scan(path, "\\.pit", directorySaveName, "add");
-        if(option == "."){
+        Scan objScan = new Scan(path, directorySaveName);
+        if(Objects.equals(option, ".")){
             //call function scan which give full directory
             objScan.createDirectoryMap();
-        }else if(option != "."){
+        }else{
             //search for a path or file
             objScan.scanPathOrFile(option,ver);
         }
     }
+
 }

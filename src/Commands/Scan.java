@@ -1,14 +1,13 @@
 package Commands;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Scanner;
 
 public class Scan {
@@ -16,126 +15,128 @@ public class Scan {
     //attributes
     private static List<String> directoryMap = new ArrayList<>();
     private String path = null;
+    private String directorySaveName = null;
+    private int iv = 0;
     private String option = null;
-    private final String directorySaveName;
-    private String directorySaveDates = null;
-    private String directoryScanIgnor = null;
-    private int ver1 = -1;
 
     //constructor
-    public Scan(String path, String directoryScanIgnor, String directorySaveName, String option){
+    public Scan(String path){
         this.path = path;
-        this.option = option;
-        this.directoryScanIgnor = directoryScanIgnor;
-        this.directorySaveName = directorySaveName;
     }
-
-    public Scan(String path, String directoryScanIgnor, String directorySaveName, String directorySaveDates, String option){
+    public Scan(String path, String directorySaveName){
         this.path = path;
-        this.directoryScanIgnor = directoryScanIgnor;
         this.directorySaveName = directorySaveName;
-        this.directorySaveDates = directorySaveDates;
-        this.option = option;
     }
 
     //methode
     public void createDirectoryMap(){
         var storage = new File(path);
-        File myDirectory = new File(path + directoryScanIgnor); // myDirectory is file which is ignored
-        pitDirectory(storage,myDirectory);
+        File myDirectory = new File(path + "\\.pit"); // myDirectory is file which is ignored
+        if(option == null){
+            try {
+                Scanner iPath = new Scanner(Path.of(directorySaveName).toFile());
+                while (iPath.hasNextLine()) {
+                    directoryMap.add(iPath.nextLine());
+                }
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+            iv = directoryMap.size();
+        }
+        if(storage.isDirectory()){
+            File[] children = storage.listFiles();
+            verificationPit(children,myDirectory);
+        }
+        if(option == null){
+            pitDirectory();
+        }
     }
 
     public void scanPathOrFile(String pathOrFile, String control){
         Path pathFile = Path.of(pathOrFile);
         File fileFile = pathFile.toFile();
+        Path PathDirectorySaveName = Path.of(directorySaveName);
         try {
-            Path a = Path.of(directorySaveName);
-            Scanner iPath = new Scanner(a.toFile());
+            Scanner iPath = new Scanner(PathDirectorySaveName.toFile());
             while (iPath.hasNextLine()) {
                 directoryMap.add(iPath.nextLine());
-                ver1 = ver1 + 1;
             }
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
-        if(control == "file"){
+        iv = directoryMap.size();
+        if(Objects.equals(control, "file")){
             //add in txt file
             try {
-                int i = 0;
-                if(ver1 == -1){
-                    Files.writeString(Path.of(directorySaveName),pathOrFile.substring(path.length()), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+                if(directoryMap.size() == 0){
+                    //Files.writeString(PathDirectorySaveName,pathOrFile.substring(path.length()), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+                    try (Writer writer = new BufferedWriter(new OutputStreamWriter(
+                            new FileOutputStream(PathDirectorySaveName.toFile(), true), "utf-8"))) {
+                        writer.write(pathOrFile.substring(path.length()));
+                    }
                     return;
                 }
-                while(i < directoryMap.size() && !(directoryMap.get(i).contains(fileFile.getPath().substring(path.length())))){
-                    i = i + 1;
+                if(verificationString(fileFile, path) != 0){
+                    try (Writer writer = new BufferedWriter(new OutputStreamWriter(
+                            new FileOutputStream(PathDirectorySaveName.toFile(),true), "utf-8"))) {
+                        writer.write(pathOrFile.substring(path.length()));
+                    }
+                   // Files.writeString(PathDirectorySaveName,pathOrFile.substring(path.length()), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
                 }
-                if(i != directoryMap.size()){
-                    return;
-                }
-                Files.writeString(Path.of(directorySaveName),pathOrFile.substring(path.length()), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        }else if(control == "path"){
+        }else if(Objects.equals(control, "path")){
             //search in a directory
             directoryMap.add(fileFile.getPath().substring(path.length()));
-            ver1 = ver1 + 1;
             File myDirectory = (Path.of(path + "\\.pit")).toFile();
-            pitDirectory(fileFile,myDirectory);
+            pitDirectory();
         }
     }
 
-    private void pitDirectory (File storage, File myDirectory){
-        int iv = ver1;
-        if(storage.isDirectory()){
-            File[] children = storage.listFiles();
-            if(children != null){
-                for(File childFile : children){
-                    if(childFile.isDirectory()){
-                        try {
-                            if(!Files.isSameFile(childFile.toPath(), myDirectory.toPath())){
-                                getAllDirectory(childFile);
-                            }
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }else{
-                        boolean ver = false;
-                        try {
-                            if(Files.isSameFile(childFile.toPath(), Path.of(path + "\\pit.jar"))){
-                                ver = true;
-                            }
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                        int i = 0;
-                        while(!((directoryMap.get(i)==(childFile.getPath().substring(path.length())))) && ver1 != -1){
-                            if(i == ver1){
-                                break;
-                            }
-                            i = i + 1;
-                        }
-                        if(!ver && !(directoryMap.get(i) == (childFile.getPath().substring(path.length()))) && ver1 != -1){
-                            ver1 = ver1 + 1;
-                            directoryMap.add(childFile.getPath().substring(path.length())); //add in directoryMap a relative path
-                        }
-                    }
-
-                }
-            }
-        }
+    private void pitDirectory(){
         try {
-            if(iv != ver1){
-                if(iv == -1){
-                    iv = 0;
-                }
-                while (directoryMap.get(iv) != null && iv != ver1) {
+            if(iv != directoryMap.size()){
+                while (iv < directoryMap.size()) {
+                    try (Writer writer = new BufferedWriter(new OutputStreamWriter(
+                            new FileOutputStream(Path.of(directorySaveName).toFile(),true), "utf-8"))) {
+                        writer.write(directoryMap.get(iv) + System.lineSeparator());
+                    }
+                   // Files.writeString(Path.of(directorySaveName),directoryMap.get(iv) + System.lineSeparator(), StandardCharsets.UTF_8,StandardOpenOption.APPEND);
                     iv = iv + 1;
-                    Files.writeString(Path.of(directorySaveName),directoryMap.get(iv) + "\n", StandardCharsets.UTF_8,StandardOpenOption.APPEND);
                 }
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void verificationPit(File[] children, File myDirectory){
+        if(children != null){
+            for(File childFile : children){
+                if(childFile.isDirectory()){
+                    try {
+                        if(!Files.isSameFile(childFile.toPath(), myDirectory.toPath())){
+                            getAllDirectory(childFile);
+                        }
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }else{
+                    boolean ver = false;
+                    try {
+                        if(Files.isSameFile(childFile.toPath(), Path.of(path + "\\pit.jar"))){
+                            ver = true;
+                        }
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    if((directoryMap.size() == 0 || !ver) && verificationString(childFile,path) != 0){
+                        directoryMap.add(childFile.getPath().substring(path.length())); //add in directoryMap a relative path
+                    }
+                }
+
+            }
         }
     }
 
@@ -144,21 +145,24 @@ public class Scan {
             File[] children = file.listFiles();
             if(children != null){
                 for(File childFile : children){
-                    int i = 0;
-                    while(!(directoryMap.get(i).contains(childFile.getPath().substring(path.length()))) && ver1 != -1){
-                        if(i == ver1){
-                            break;
-                        }
-                        i = i + 1;
-                    }
-                    if(!directoryMap.get(i).contains(childFile.getPath().substring(path.length())) && ver1 != -1){
-                        ver1 = ver1 + 1;
-                        directoryMap.add(childFile.getPath().substring(path.length())); //add in directoryMap a relative path
+                    if(verificationString(childFile, path) != 0 || directoryMap.size() == 0){
+                        directoryMap.add(childFile.getPath().substring(path.length()));
                     }
                     getAllDirectory(childFile);
                 }
             }
         }
+    }
+
+    private static int verificationString(File fileFile, String path){
+        int i = 0;
+        while(i < directoryMap.size() && !(Objects.equals(directoryMap.get(i), fileFile.getPath().substring(path.length())))){
+            i = i + 1;
+        }
+        if(i != directoryMap.size()){
+            return 0;
+        }
+        return i;
     }
 
     public static String scanSaveDirectory(String path, String option){
@@ -167,13 +171,13 @@ public class Scan {
         File[] children = storage.listFiles();
         if(children != null){
             int n = 0;
-            for (File childFile : children){
+            for (File ignored : children){
                 n = n + 1;
             }
-            if(option == "new"){
+            if(Objects.equals(option, "new")){
                 String nString = "\\0" + n;
                 directoryPath = path + nString;
-            }else if (option == "current"){
+            }else if (Objects.equals(option, "current")){
                 String nString = "\\0" + (n-1);
                 directoryPath = path + nString;
             }

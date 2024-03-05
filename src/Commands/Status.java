@@ -37,7 +37,7 @@ public class Status {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        Scan obj = new Scan(path,path + "\\.pit", directorySaveName, directorySaveDates ,null);
+        Scan obj = new Scan(path, directorySaveName);
         obj.createDirectoryMap();
         try {
             Scanner iDateTemp = new Scanner(directorySaveDatesP.toFile());

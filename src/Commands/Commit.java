@@ -1,14 +1,12 @@
 package Commands;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Scanner;
 
-import static Commands.Create.directoryTempDestroy;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public class Commit {
@@ -51,8 +49,9 @@ public class Commit {
                     Files.writeString(Path.of(saveDatesTxtDirectory), dataFile.lastModified() + "\n", StandardCharsets.UTF_8, StandardOpenOption.APPEND);
                 }
             }
+            iPath.close();
             Files.copy(Path.of(scanFile), Path.of(saveTxtDirectory), REPLACE_EXISTING);
-            directoryTempDestroy(path + "\\.pit\\temp");
+            Create.deleteDirectory(Path.of(path + "\\.pit\\temp").toFile());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

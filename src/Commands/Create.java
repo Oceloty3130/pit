@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SecureDirectoryStream;
+
 import Commands.Scan;
 
 public class Create {
@@ -48,11 +50,17 @@ public class Create {
         }
     }
 
-    public static void directoryTempDestroy(String path){
-        var file = new File(path);
-        File[] entries = file.listFiles();
-        for(File currentFile: entries){
-            currentFile.delete();
+    static void deleteDirectory(File directoryToBeDeleted) {
+        File[] allContents = directoryToBeDeleted.listFiles();
+        if (allContents != null) {
+            for (File file : allContents) {
+                deleteDirectory(file);
+            }
+        }
+        try {
+            Files.delete(directoryToBeDeleted.toPath());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 }
