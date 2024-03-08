@@ -26,7 +26,7 @@ public class Commands {
 
     public void Add(){
         if(!Objects.equals(option, ".")){
-            Add objAdd = new Add(path,option);
+            Add objAdd = new Add(path,option,"add");
             objAdd.directoryAdd();
         }else{
             Add objAdd = new Add(path);
@@ -35,9 +35,10 @@ public class Commands {
 
     }
 
-//    public void Satus(){
-//        Status obj = new Status(path,"dates",);
-//    }
+    public void Status(){
+        Status obj = new Status(path);
+        obj.modificationsStatus();
+    }
 
     public void setPath(String path) {
         this.path = path;

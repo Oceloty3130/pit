@@ -38,6 +38,7 @@ public class Scan {
                 while (iPath.hasNextLine()) {
                     directoryMap.add(iPath.nextLine());
                 }
+                iPath.close();
             } catch (FileNotFoundException e) {
                 throw new RuntimeException(e);
             }
@@ -55,12 +56,13 @@ public class Scan {
     public void scanPathOrFile(String pathOrFile, String control){
         Path pathFile = Path.of(pathOrFile);
         File fileFile = pathFile.toFile();
-        Path PathDirectorySaveName = Path.of(directorySaveName);
+        Path pathDirectorySaveName = Path.of(directorySaveName);
         try {
-            Scanner iPath = new Scanner(PathDirectorySaveName.toFile());
+            Scanner iPath = new Scanner(pathDirectorySaveName.toFile());
             while (iPath.hasNextLine()) {
                 directoryMap.add(iPath.nextLine());
             }
+            iPath.close();
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -69,19 +71,11 @@ public class Scan {
             //add in txt file
             try {
                 if(directoryMap.size() == 0){
-                    //Files.writeString(PathDirectorySaveName,pathOrFile.substring(path.length()), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
-                    try (Writer writer = new BufferedWriter(new OutputStreamWriter(
-                            new FileOutputStream(PathDirectorySaveName.toFile(), true), "utf-8"))) {
-                        writer.write(pathOrFile.substring(path.length()));
-                    }
+                    Files.writeString(pathDirectorySaveName,pathOrFile.substring(path.length()), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
                     return;
                 }
                 if(verificationString(fileFile, path) != 0){
-                    try (Writer writer = new BufferedWriter(new OutputStreamWriter(
-                            new FileOutputStream(PathDirectorySaveName.toFile(),true), "utf-8"))) {
-                        writer.write(pathOrFile.substring(path.length()));
-                    }
-                   // Files.writeString(PathDirectorySaveName,pathOrFile.substring(path.length()), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+                    Files.writeString(pathDirectorySaveName,pathOrFile.substring(path.length()), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
                 }
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -98,11 +92,7 @@ public class Scan {
         try {
             if(iv != directoryMap.size()){
                 while (iv < directoryMap.size()) {
-                    try (Writer writer = new BufferedWriter(new OutputStreamWriter(
-                            new FileOutputStream(Path.of(directorySaveName).toFile(),true), "utf-8"))) {
-                        writer.write(directoryMap.get(iv) + System.lineSeparator());
-                    }
-                   // Files.writeString(Path.of(directorySaveName),directoryMap.get(iv) + System.lineSeparator(), StandardCharsets.UTF_8,StandardOpenOption.APPEND);
+                    Files.writeString(Path.of(directorySaveName),directoryMap.get(iv) + System.lineSeparator(), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
                     iv = iv + 1;
                 }
             }
@@ -165,6 +155,7 @@ public class Scan {
         return i;
     }
 
+    //methode Create
     public static String scanSaveDirectory(String path, String option){
         String directoryPath = null;
         var storage = new File(path);
@@ -185,4 +176,8 @@ public class Scan {
         return directoryPath;
     }
 
+    //Set
+    public void setOption(String option) {
+        this.option = option;
+    }
 }

@@ -23,7 +23,7 @@ public class Commit {
     //constructor
     public Commit(String path1, String option1) {
         this.path = path1;
-        this.option = option1;
+        this.option = option1; // add message
     }
 
     //methods

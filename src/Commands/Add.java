@@ -9,11 +9,13 @@ public class Add {
     //attributes
     private String path;
     private String option = ".";
+    private String optionStatus = "add";
 
     //constructor
-    public Add(String path, String option){
+    public Add(String path, String option,String optionStatus){
         this.path = path;
         this.option = option;
+        this.optionStatus = optionStatus;
     }
 
     public Add(String path){
@@ -23,25 +25,30 @@ public class Add {
     //methods
     public void directoryAdd(){
         String ver;
-        String directorySaveName = path + "\\.pit\\temp\\directoryMap.txt";
+        String directorySaveName;
+        if(Objects.equals(optionStatus,"status")){
+            directorySaveName = path + "\\.pit\\temp\\MapStatus.txt";
+        }else{
+            directorySaveName = path + "\\.pit\\temp\\directoryMap.txt";
+        }
         Path pathOption = Path.of(option);
         File fileOption = pathOption.toFile();
-        if(!(Path.of(path + "\\.pit\\temp").toFile()).exists()){
-            Create.directoryTemp(path,"name");
+        Scan objScan = new Scan(path, directorySaveName);
+        if(!(Path.of(path + "\\.pit\\temp\\directoryMap.txt").toFile()).exists()){
+            Create.directoryTemp(path,null);
+        }
+        if(Objects.equals(option, ".")){
+            //call function scan which give full directory
+            objScan.createDirectoryMap();
+            return;
         }
         if(fileOption.isDirectory()){
             ver = "path";
         }else{
             ver = "file";
         }
-        Scan objScan = new Scan(path, directorySaveName);
-        if(Objects.equals(option, ".")){
-            //call function scan which give full directory
-            objScan.createDirectoryMap();
-        }else{
-            //search for a path or file
-            objScan.scanPathOrFile(option,ver);
-        }
+        //search for a path or file
+        objScan.scanPathOrFile(option,ver);
     }
 
 }

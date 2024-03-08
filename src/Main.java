@@ -28,6 +28,9 @@ public class Main {
             case "commit":
                 obj.Commit();
                 break;
+            case "status":
+                obj.Status();
+                break;
         }
     }
 }

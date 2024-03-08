@@ -3,11 +3,8 @@ package Commands;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.SecureDirectoryStream;
-
-import Commands.Scan;
+import java.util.Objects;
 
 public class Create {
 
@@ -41,9 +38,10 @@ public class Create {
         directoryPath = path + "\\.pit\\temp";
         try{
             Files.createDirectories(Paths.get(directoryPath));
-            Files.createFile(Paths.get(directoryPath+"\\directoryMap.txt"));
-            if(option == "date"){
-                Files.createFile(Paths.get(directoryPath+"\\datesDirectoryMap.txt"));
+            if(Objects.equals(option, "compare")){
+                Files.createFile(Paths.get(directoryPath+"\\MapStatus.txt"));
+            }else if(option == null){
+                Files.createFile(Paths.get(directoryPath+"\\directoryMap.txt"));
             }
         }catch (IOException e){
             throw new RuntimeException(e);
