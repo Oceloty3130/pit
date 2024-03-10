@@ -17,8 +17,8 @@ public class Status {
     private static List<String> directoryMapModify = new ArrayList<>();
     private static List<String> directoryMapNotAdded = new ArrayList<>();
     private static List<String> directoryMapAdded = new ArrayList<>();
-    private static HashMap<Integer,Entries> directoryHashMap = new HashMap<Integer, Entries>();
-    private static Map<Integer,Entries> treeMap = new TreeMap<>();
+    private static Map<Integer,Entries> directoryHashMap = new HashMap<Integer, Entries>();
+    private static TreeMap<Integer, Entries> treeMap = new TreeMap<Integer, Entries>();
     private String path;
     private String option;
 
@@ -43,7 +43,7 @@ public class Status {
                     System.out.println("Pit is in a directory with 0 files/directories");
                     return;
                 }
-                System.out.println("Next files was not added for commit: ");
+                System.out.println("These files were not added for commit: ");
                 System.out.println(directoryHashMapStatus.values());
                 return;
             }
@@ -61,11 +61,11 @@ public class Status {
                 directoryMapNotAdded.remove(s);
             }
             if(!directoryMapAdded.isEmpty()){
-                System.out.println("Next files was added for commit: ");
+                System.out.println("These files were added for commit: ");
                 System.out.println(directoryHashMapStatus.values());
             }
             if(!directoryMapNotAdded.isEmpty()){
-                System.out.println("Next files was not added for commit: ");
+                System.out.println("These files were not added for commit: ");
                 System.out.println(directoryHashMapStatus.values());
             }
             return;
@@ -90,11 +90,11 @@ public class Status {
                 }
             }
             if(!directoryMapModify.isEmpty()){
-                System.out.println("Next file was modify: ");
+                System.out.println("These files were modify: ");
                 System.out.println(directoryMapModify);
             }
             if(!directoryMapNotAdded.isEmpty()){
-                System.out.println("Next file was not added: ");
+                System.out.println("These files were not added: ");
                 System.out.println(directoryMapNotAdded);
             }
             return;
@@ -125,15 +125,15 @@ public class Status {
             }
         }
         if(!directoryMapAdded.isEmpty()){
-            System.out.println("Next files was added for commit: ");
+            System.out.println("These files were added for commit: ");
             System.out.println(directoryMapAdded);
         }
         if(!directoryMapModify.isEmpty()){
-            System.out.println("Next files was modify but not added for commit: ");
+            System.out.println("These files were modify but not added for commit: ");
             System.out.println(directoryMapModify);
         }
         if(!directoryMapNotAdded.isEmpty()){
-            System.out.println("Next files was not added for commit: ");
+            System.out.println("These files were not added for commit: ");
             System.out.println(directoryMapNotAdded);
         }
         return;
@@ -200,30 +200,5 @@ public class Status {
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
-    }
-}
-
-class Entries{
-    private String name;
-    private String date;
-    Entries(String name, String date){
-        this.name = name;
-        this.date = date;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setDate(String date) {
-        this.date = date;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getDate() {
-        return date;
     }
 }

@@ -31,9 +31,12 @@ public class Add {
         }else{
             directorySaveName = path + "\\.pit\\temp\\directoryMap.txt";
         }
-        Path pathOption = Path.of(option);
+        if(option.contains(path)){
+            option = option.substring(path.length());
+        }
+        Path pathOption = Path.of(path + "\\" + option);
         File fileOption = pathOption.toFile();
-        Scan objScan = new Scan(path, directorySaveName);
+        Scan objScan = new Scan(path, directorySaveName,optionStatus);
         if(!(Path.of(path + "\\.pit\\temp\\directoryMap.txt").toFile()).exists()){
             Create.directoryTemp(path,null);
         }
@@ -43,7 +46,7 @@ public class Add {
             return;
         }
         if(fileOption.isDirectory()){
-            ver = "path";
+            ver = "directory";
         }else{
             ver = "file";
         }

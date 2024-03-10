@@ -5,10 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Scanner;
+import java.util.*;
 
 public class Scan {
 
@@ -18,14 +15,20 @@ public class Scan {
     private String directorySaveName = null;
     private int iv = 0;
     private String option = null;
+    private String optionStatus;
+    private static HashMap<Integer,Entries> directoryHashMap = new HashMap<Integer, Entries>();
+    private static Map<Integer,Entries> treeMap = new TreeMap<>();
+    private static List<String> directoryMapDatesS = new ArrayList<>();
+    private static List<String> directoryMapNameS = new ArrayList<>();
 
     //constructor
     public Scan(String path){
         this.path = path;
     }
-    public Scan(String path, String directorySaveName){
+    public Scan(String path, String directorySaveName, String optionStatus){
         this.path = path;
         this.directorySaveName = directorySaveName;
+        this.optionStatus = optionStatus;
     }
 
     //methode
@@ -54,7 +57,8 @@ public class Scan {
     }
 
     public void scanPathOrFile(String pathOrFile, String control){
-        Path pathFile = Path.of(pathOrFile);
+        String file = path + "\\" + pathOrFile;
+        Path pathFile = Path.of(file);
         File fileFile = pathFile.toFile();
         Path pathDirectorySaveName = Path.of(directorySaveName);
         try {
@@ -71,28 +75,49 @@ public class Scan {
             //add in txt file
             try {
                 if(directoryMap.size() == 0){
-                    Files.writeString(pathDirectorySaveName,pathOrFile.substring(path.length()), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+                    Files.writeString(pathDirectorySaveName,file.substring(path.length()) + System.lineSeparator(), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
                     return;
                 }
-                if(verificationString(fileFile, path) != 0){
-                    Files.writeString(pathDirectorySaveName,pathOrFile.substring(path.length()), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+                if(verificationString(fileFile, path)){
+                    Files.writeString(pathDirectorySaveName,file.substring(path.length()) + System.lineSeparator(), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
                 }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        }else if(Objects.equals(control, "path")){
+        }else if(Objects.equals(control, "directory")){
             //search in a directory
             directoryMap.add(fileFile.getPath().substring(path.length()));
-            File myDirectory = (Path.of(path + "\\.pit")).toFile();
+            File[] children = fileFile.listFiles();
+            File myDirectory = new File(path + "\\.pit");
+            verificationPit(children,myDirectory);
             pitDirectory();
         }
     }
 
     private void pitDirectory(){
+        if(Objects.equals(optionStatus, "add") && (Path.of(path + "\\.pit\\save\\00").toFile().exists())){
+            readIntoSave();
+        }
         try {
             if(iv != directoryMap.size()){
                 while (iv < directoryMap.size()) {
-                    Files.writeString(Path.of(directorySaveName),directoryMap.get(iv) + System.lineSeparator(), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+                    if(Objects.equals(optionStatus, "add")){
+                        if(!treeMap.isEmpty()){
+                            File fileFile = Path.of(path + directoryMap.get(iv)).toFile();
+                            if(treeMap.containsKey(directoryMap.get(iv).hashCode())) {
+                                Entries test = treeMap.get(directoryMap.get(iv).hashCode());
+                                if (!Objects.equals(test.getDate(), String.valueOf(fileFile.lastModified()))) {
+                                    Files.writeString(Path.of(directorySaveName), directoryMap.get(iv) + System.lineSeparator(), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+                                }
+                            }else if(!fileFile.isDirectory()){
+                                Files.writeString(Path.of(directorySaveName),directoryMap.get(iv) + System.lineSeparator(), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+                            }
+                        }else{
+                            Files.writeString(Path.of(directorySaveName),directoryMap.get(iv) + System.lineSeparator(), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+                        }
+                    }else if(Objects.equals(optionStatus, "status")){
+                        Files.writeString(Path.of(directorySaveName),directoryMap.get(iv) + System.lineSeparator(), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+                    }
                     iv = iv + 1;
                 }
             }
@@ -121,7 +146,7 @@ public class Scan {
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
-                    if((directoryMap.size() == 0 || !ver) && verificationString(childFile,path) != 0){
+                    if((directoryMap.size() == 0 || !ver) && verificationString(childFile,path)){
                         directoryMap.add(childFile.getPath().substring(path.length())); //add in directoryMap a relative path
                     }
                 }
@@ -135,7 +160,7 @@ public class Scan {
             File[] children = file.listFiles();
             if(children != null){
                 for(File childFile : children){
-                    if(verificationString(childFile, path) != 0 || directoryMap.size() == 0){
+                    if(verificationString(childFile, path) || directoryMap.size() == 0){
                         directoryMap.add(childFile.getPath().substring(path.length()));
                     }
                     getAllDirectory(childFile);
@@ -144,15 +169,53 @@ public class Scan {
         }
     }
 
-    private static int verificationString(File fileFile, String path){
+    private boolean verificationString(File fileFile, String path){
         int i = 0;
         while(i < directoryMap.size() && !(Objects.equals(directoryMap.get(i), fileFile.getPath().substring(path.length())))){
             i = i + 1;
         }
-        if(i != directoryMap.size()){
-            return 0;
+        return i == directoryMap.size();
+    }
+
+
+    //read to save directory
+    private void readIntoSave(){
+        String pathCurrentDirectory = Scan.scanSaveDirectory(path + "\\.pit\\save" , "current");
+        String commitMapName = pathCurrentDirectory + "\\.info\\directoryMap.txt";
+        readToFile(Path.of(commitMapName),"name");
+        String commitMapDates = pathCurrentDirectory + "\\.info\\datesDirectoryMap.txt";
+        readToFile(Path.of(commitMapDates),"date");
+        int i = 0;
+        int j = 0;
+        String currentFile;
+        while(i < directoryMapNameS.size()){
+            currentFile = path + directoryMapNameS.get(i);
+            if(!Path.of(currentFile).toFile().isDirectory()) {
+                directoryHashMap.put(directoryMapNameS.get(i).hashCode(), new Entries(directoryMapNameS.get(i), directoryMapDatesS.get(j)));
+                i += 1;
+                j += 1;
+            }
         }
-        return i;
+        treeMap.putAll(directoryHashMap);
+    }
+
+    private void readToFile(Path pathDirectorySave, String optionRead){
+        try {
+            Scanner iPath = new Scanner(pathDirectorySave.toFile());
+            while (iPath.hasNextLine()) {
+                String pathC = iPath.nextLine();
+                if(Objects.equals(optionRead, "date")){
+                    directoryMapDatesS.add(pathC);
+                }else if(Objects.equals(optionRead,"name")) {
+                    if (Path.of(path + pathC).toFile().isFile()) {
+                        directoryMapNameS.add(pathC);
+                    }
+                }
+            }
+            iPath.close();
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     //methode Create
@@ -174,10 +237,5 @@ public class Scan {
             }
         }
         return directoryPath;
-    }
-
-    //Set
-    public void setOption(String option) {
-        this.option = option;
     }
 }

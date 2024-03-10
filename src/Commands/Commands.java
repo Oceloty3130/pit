@@ -5,7 +5,7 @@ import java.util.Objects;
 public class Commands {
 
     //attributes
-    private String path;
+    private String path = null;
     private String option = null;
 
     //constructor
@@ -20,7 +20,7 @@ public class Commands {
     }
 
     public void Commit(){
-        Commit objCommit = new Commit(path,option);
+        Commit objCommit = new Commit(path);
         objCommit.saveDirectory();
     }
 
@@ -38,9 +38,5 @@ public class Commands {
     public void Status(){
         Status obj = new Status(path);
         obj.modificationsStatus();
-    }
-
-    public void setPath(String path) {
-        this.path = path;
     }
 }
